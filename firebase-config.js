@@ -8,17 +8,3 @@ export const firebaseConfig = {
   messagingSenderId: "568752582166",
   appId: "1:568752582166:web:9cc2638fd7ec1623170f37"
 };
-
-// Ambang batas untuk pengecekan kesehatan ESP32 (dipakai di debug.html dan dashboard.html)
-export const THRESHOLDS = {
-  staleMs: 15000,
-  rssiWarn: -67,
-  rssiFail: -75,
-  freeHeapWarn: 20000,
-  freeHeapFail: 10000,
-  minHeapWarn: 15000,
-  tempWarn: 60,
-  tempFail: 70,
-  reconnectWarn: 1,
-  reconnectFail: 5
-};
