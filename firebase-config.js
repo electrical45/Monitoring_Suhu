@@ -1,12 +1,12 @@
 // firebase-config.js
 export const firebaseConfig = {
-  apiKey: "AIzaSyBrTrDzjpLJcp4M0sFlRYKzg6tfuWHBSTw",
-  authDomain: "esp32-health-f1015.firebaseapp.com",
-  databaseURL: "https://esp32-health-f1015-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "esp32-health-f1015",
-  storageBucket: "esp32-health-f1015.firebasestorage.app",
-  messagingSenderId: "834956472248",
-  appId: "1:834956472248:web:53ff03433c34f3770ee94d"
+  apiKey: "AIzaSyDVHB-39E_crhScVR-jNJUgSGVe_pTRfE8",
+  authDomain: "monitoring-suhu-97afd.firebaseapp.com",
+  databaseURL: "https://monitoring-suhu-97afd-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "monitoring-suhu-97afd",
+  storageBucket: "monitoring-suhu-97afd.firebasestorage.app",
+  messagingSenderId: "568752582166",
+  appId: "1:568752582166:web:9cc2638fd7ec1623170f37"
 };
 
 // Ambang batas untuk pengecekan kesehatan ESP32 (dipakai di debug.html dan dashboard.html)
