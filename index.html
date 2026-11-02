@@ -3,194 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitoring Panel Listrik 1 Fasa</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <title>Monitoring Suhu MLX90614</title>
   <style>
     :root {
       --bg:#c9cdd1; --panel:#eceef0; --ink:#1b2229; --muted:#59646e;
-      --steel:#35404b; --line:#87909a; --ok-zone:#dde1e4;
-      --warn:#d99a00; --alarm:#c0262d; --live:#2e8b57;
-      --label:'Barlow Condensed','Arial Narrow',sans-serif;
-      --body:'Barlow Semi Condensed','Segoe UI',Arial,sans-serif;
-      --mono:'IBM Plex Mono',Consolas,monospace;
+      --steel:#35404b; --line:#87909a; --warn:#d99a00; --alarm:#c0262d; --live:#2e8b57;
+      --label:'Arial Narrow',Arial,sans-serif; --body:'Segoe UI',Arial,sans-serif;
     }
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.4; }
-    :focus-visible { outline:3px solid #1b6fd1; outline-offset:2px; }
-
-    .banner { display:none; background:var(--alarm); color:#fff; font-weight:600; padding:10px 24px; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--body); font-size:16px; }
+    .top { background:var(--steel); color:#fff; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    .top h1 { margin:0; font-size:1.6rem; font-family:var(--label); }
+    .top .site { color:#aeb8c2; font-size:.9rem; }
+    .clock { font-family:var(--label); font-size:1.6rem; font-weight:700; }
+    main { max-width:1100px; margin:0 auto; padding:20px 24px 32px; }
+    .banner { display:none; padding:10px 24px; color:#fff; background:var(--alarm); font-weight:600; }
     .banner.show { display:block; }
     .banner.error { background:#6b7580; }
-
-    .top { background:var(--steel); color:#fff; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px 24px; padding:12px 24px; border-bottom:4px solid #1f2830; }
-    .top h1 { margin:0; font-family:var(--label); font-weight:700; font-size:1.7rem; }
-    .top .site { color:#aeb8c2; font-size:.95rem; }
-    .clock { text-align:right; font-family:var(--label); font-weight:600; font-size:1.8rem; line-height:1; font-variant-numeric:tabular-nums; }
-    .clock small { display:block; font-family:var(--body); font-weight:400; font-size:.85rem; color:#aeb8c2; margin-top:4px; }
-
-    main { max-width:1280px; margin:0 auto; padding:20px 24px 32px; }
-
-    .strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin:0 0 20px; }
+    .strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:20px; }
     .strip > div { background:var(--panel); padding:10px 16px; }
     .strip dt { color:var(--muted); font-size:.9rem; }
-    .strip dd { margin:2px 0 0; font-family:var(--label); font-weight:600; font-size:1.5rem; display:flex; align-items:center; gap:8px; font-variant-numeric:tabular-nums; }
-    .strip dd small { font-family:var(--body); font-weight:400; font-size:.9rem; color:var(--muted); }
-    .lamp { width:14px; height:14px; border-radius:50%; background:#9aa3ab; border:2px solid #6b747c; flex:none; }
-    .lamp.online { background:var(--live); border-color:#1d5c39; }
-    .lamp.stale  { background:var(--warn); border-color:#8a6300; }
-    .lamp.error  { background:var(--alarm); border-color:#7d1519; }
-
-    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+    .strip dd { margin:2px 0 0; font-size:1.4rem; font-weight:700; font-family:var(--label); }
+    .lamp { display:inline-block; width:12px; height:12px; border-radius:50%; background:#9aa3ab; margin-right:6px; }
+    .lamp.online { background:var(--live); }
+    .lamp.stale  { background:var(--warn); }
+    .lamp.error  { background:var(--alarm); }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
     .card { background:var(--panel); border:1px solid var(--line); }
-    .card > header { background:var(--steel); color:#fff; display:flex; justify-content:space-between; align-items:center; padding:6px 12px; font-family:var(--label); }
-    .card > header .name { font-weight:600; font-size:1.25rem; }
-    .card > header .st { font-weight:600; font-size:1rem; padding:1px 10px; background:#55616d; }
+    .card > header { background:var(--steel); color:#fff; padding:6px 12px; display:flex; justify-content:space-between; align-items:center; }
+    .card > header .st { font-size:.9rem; padding:1px 10px; background:#55616d; }
     .card.warn > header { background:var(--warn); color:var(--ink); }
-    .card.warn > header .st { background:#b88100; color:#fff; }
     .card.alarm > header { background:var(--alarm); }
-    .card.alarm > header .st { background:#8f1a20; }
     .card.na > header .st { background:#6b7580; }
-
-    .meter { padding:12px 16px; }
-    .mh { display:flex; align-items:baseline; gap:8px; }
-    .mh .lbl { flex:1; font-family:var(--label); font-weight:600; font-size:1.05rem; color:var(--muted); }
-    .mh .mv { font-family:var(--label); font-weight:600; font-size:2.6rem; line-height:1; font-variant-numeric:tabular-nums; }
-    .mh .mu { font-family:var(--label); font-size:1.1rem; color:var(--muted); }
-    .bar { height:10px; background:var(--ok-zone); border:1px solid var(--line); margin:8px 0 2px; position:relative; }
-    .bar > i { position:absolute; left:0; top:0; bottom:0; width:0; background:#1f4e79; transition:width .5s; }
+    .reading { padding:12px 16px; }
+    .big { font-size:3.2rem; font-weight:700; font-family:var(--label); line-height:1; }
+    .unit { font-size:1.2rem; color:var(--muted); }
+    .bar { height:10px; background:#dde1e4; border:1px solid var(--line); margin:10px 0 4px; }
+    .bar > i { display:block; height:100%; background:#1f4e79; width:0; transition:width .5s; }
     .card.warn .bar > i { background:var(--warn); }
     .card.alarm .bar > i { background:var(--alarm); }
-    .card.na .bar > i { background:#9aa3ab; }
-    .card.warn .mv { color:#8a6300; }
-    .card.alarm .mv { color:var(--alarm); }
-    .card.na .mv { color:#8a949d; }
-    .rng { font-size:.8rem; color:var(--muted); }
-
-    .mini { display:grid; grid-template-columns:1fr 1fr; margin:0; border-top:1px solid var(--line); }
-    .mini > div { padding:8px 16px; border-right:1px solid var(--line); border-bottom:1px solid #d0d4d8; }
-    .mini > div:nth-child(2n) { border-right:0; }
-    .mini dt { font-size:.82rem; color:var(--muted); }
-    .mini dd { margin:0; font-family:var(--label); font-weight:600; font-size:1.15rem; font-variant-numeric:tabular-nums; }
-
+    .rng { font-size:.85rem; color:var(--muted); }
+    .mini { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--line); }
+    .mini > div { padding:8px 16px; }
+    .mini dt { font-size:.85rem; color:var(--muted); }
+    .mini dd { margin:0; font-size:1.1rem; font-weight:700; font-family:var(--label); }
     .panel { background:var(--panel); border:1px solid var(--line); margin-top:20px; }
-    .panel > header { background:var(--steel); color:#fff; padding:6px 12px; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:space-between; font-family:var(--label); }
-    .panel > header h2 { margin:0; font-weight:600; font-size:1.2rem; }
-    .seg { display:flex; flex-wrap:wrap; gap:2px; }
-    .seg button { border:0; background:#55616d; color:#fff; padding:3px 12px; cursor:pointer; font-family:var(--label); font-weight:500; font-size:1rem; }
-    .seg button[aria-pressed="true"] { background:#fff; color:var(--ink); }
-    .chartwrap { padding:12px 16px 4px; }
-    #trend { width:100%; height:300px; display:block; touch-action:pan-y; }
-    .readout { padding:4px 16px 12px; font-family:var(--mono); font-size:.85rem; color:var(--muted); min-height:1.9em; }
-
-    .logwrap { max-height:260px; overflow:auto; }
-    table { width:100%; border-collapse:collapse; font-size:.95rem; }
-    th { text-align:left; position:sticky; top:0; background:#dfe3e6; font-weight:600; padding:6px 16px; border-bottom:1px solid var(--line); }
-    td { padding:6px 16px; border-bottom:1px solid #d0d4d8; vertical-align:top; }
-    td.t { font-family:var(--mono); font-size:.85rem; white-space:nowrap; color:var(--muted); }
-    .lv { display:inline-block; min-width:5.2em; text-align:center; padding:0 8px; font-weight:600; font-size:.85rem; color:#fff; background:#6b7580; }
+    .panel > header { background:var(--steel); color:#fff; padding:6px 12px; font-family:var(--label); font-size:1.15rem; }
+    #trend { width:100%; height:280px; display:block; }
+    .legend { padding:6px 16px; font-size:.9rem; color:var(--muted); }
+    .legend b { display:inline-block; width:14px; height:3px; vertical-align:middle; margin-right:4px; }
+    .empty { padding:14px 16px; color:var(--muted); }
+    table { width:100%; border-collapse:collapse; font-size:.9rem; }
+    th, td { text-align:left; padding:6px 16px; border-bottom:1px solid #d0d4d8; }
+    th { background:#dfe3e6; }
+    .lv { padding:1px 8px; color:#fff; background:#6b7580; font-weight:600; font-size:.8rem; }
     .lv.alarm { background:var(--alarm); } .lv.warn { background:var(--warn); color:var(--ink); } .lv.ok { background:var(--live); }
-    .empty { padding:18px 16px; color:var(--muted); }
-    footer { margin-top:18px; color:var(--muted); font-size:.9rem; }
-
-    @media (max-width:600px) {
-      .top, main { padding-left:12px; padding-right:12px; }
-      .mh .mv { font-size:2.2rem; }
-      #trend { height:240px; }
-    }
+    .logwrap { max-height:240px; overflow:auto; }
+    @media (max-width:600px) { .big { font-size:2.4rem; } }
   </style>
 </head>
 <body>
-  <div class="banner" id="banner" role="alert" aria-live="assertive"></div>
+  <div class="banner" id="banner" role="alert"></div>
 
   <div class="top">
     <div>
-      <h1>Monitoring Panel Listrik 1 Fasa</h1>
-      <div class="site" id="site"></div>
+      <h1>Monitoring Suhu MLX90614</h1>
+      <div class="site">Sensor inframerah via ESP32 + Firebase</div>
     </div>
-    <div class="clock"><span id="clock">--:--:--</span><small id="date">-</small></div>
+    <div class="clock" id="clock">--:--:--</div>
   </div>
 
   <main>
     <dl class="strip">
       <div><dt>Komunikasi</dt><dd><i class="lamp" id="lamp"></i><span id="comm">Menghubungkan</span></dd></div>
-      <div><dt>Alarm aktif</dt><dd id="nAlarm">--</dd></div>
-      <div><dt>Peringatan aktif</dt><dd id="nWarn">--</dd></div>
-      <div><dt>Daya saat ini</dt><dd id="curP">--</dd></div>
-      <div><dt>Data terakhir</dt><dd><span id="lastT">--:--:--</span><small id="age"></small></dd></div>
+      <div><dt>Suhu objek saat ini</dt><dd id="curObj">--</dd></div>
+      <div><dt>Suhu ambien saat ini</dt><dd id="curAmb">--</dd></div>
+      <div><dt>Data terakhir</dt><dd id="lastT">--:--:--</dd></div>
     </dl>
 
-    <section class="cards" aria-label="Pembacaan utama">
-      <article class="card na" id="c-V">
-        <header><span class="name">Tegangan</span><span class="st" id="s-V">Tidak ada data</span></header>
-        <div class="meter">
-          <div class="mh"><span class="lbl">Tegangan</span><span class="mv" id="v-V">--</span><span class="mu">V</span></div>
-          <div class="bar"><i id="b-V"></i></div>
-          <div class="rng" id="r-V"></div>
+    <section class="cards">
+      <article class="card na" id="c-obj">
+        <header><span>Suhu objek</span><span class="st" id="s-obj">Tidak ada data</span></header>
+        <div class="reading">
+          <span class="big" id="v-obj">--</span> <span class="unit">°C</span>
+          <div class="bar"><i id="b-obj"></i></div>
+          <div class="rng">Peringatan: <span id="w-obj"></span> °C &nbsp; Alarm: <span id="a-obj"></span> °C</div>
         </div>
         <dl class="mini">
-          <div><dt>Minimum</dt><dd id="min-V">--</dd></div>
-          <div><dt>Maksimum</dt><dd id="max-V">--</dd></div>
+          <div><dt>Minimum</dt><dd id="min-obj">--</dd></div>
+          <div><dt>Maksimum</dt><dd id="max-obj">--</dd></div>
         </dl>
       </article>
 
-      <article class="card na" id="c-I">
-        <header><span class="name">Arus</span><span class="st" id="s-I">Tidak ada data</span></header>
-        <div class="meter">
-          <div class="mh"><span class="lbl">Arus</span><span class="mv" id="v-I">--</span><span class="mu">A</span></div>
-          <div class="bar"><i id="b-I"></i></div>
-          <div class="rng" id="r-I"></div>
+      <article class="card na" id="c-amb">
+        <header><span>Suhu ambien</span><span class="st" id="s-amb">Tidak ada data</span></header>
+        <div class="reading">
+          <span class="big" id="v-amb">--</span> <span class="unit">°C</span>
+          <div class="bar"><i id="b-amb"></i></div>
+          <div class="rng">Peringatan: <span id="w-amb"></span> °C &nbsp; Alarm: <span id="a-amb"></span> °C</div>
         </div>
         <dl class="mini">
-          <div><dt>Minimum</dt><dd id="min-I">--</dd></div>
-          <div><dt>Maksimum</dt><dd id="max-I">--</dd></div>
-        </dl>
-      </article>
-
-      <article class="card na" id="c-P">
-        <header><span class="name">Daya</span><span class="st" id="s-P">Tidak ada data</span></header>
-        <div class="meter">
-          <div class="mh"><span class="lbl">Daya aktif</span><span class="mv" id="v-P">--</span><span class="mu">W</span></div>
-          <div class="bar"><i id="b-P"></i></div>
-          <div class="rng" id="r-P"></div>
-        </div>
-        <dl class="mini">
-          <div><dt>Minimum</dt><dd id="min-P">--</dd></div>
-          <div><dt>Maksimum</dt><dd id="max-P">--</dd></div>
-        </dl>
-      </article>
-
-      <article class="card na" id="c-E">
-        <header><span class="name">Energi &amp; Biaya</span><span class="st" id="s-E">Akumulasi</span></header>
-        <div class="meter">
-          <div class="mh"><span class="lbl">Energi total</span><span class="mv" id="v-E">--</span><span class="mu">kWh</span></div>
-          <div class="rng" id="r-E"></div>
-        </div>
-        <dl class="mini">
-          <div><dt>Estimasi biaya</dt><dd id="cost">--</dd></div>
-          <div><dt>Tarif</dt><dd id="tarif">--</dd></div>
-          <div><dt>Pemakaian (grafik)</dt><dd id="win">--</dd></div>
-          <div><dt>Rata-rata daya</dt><dd id="avgP">--</dd></div>
+          <div><dt>Minimum</dt><dd id="min-amb">--</dd></div>
+          <div><dt>Maksimum</dt><dd id="max-amb">--</dd></div>
         </dl>
       </article>
     </section>
 
     <section class="panel">
-      <header>
-        <h2>Tren data</h2>
-        <div class="seg" id="seg" role="group" aria-label="Pilih grafik"></div>
-      </header>
-      <div class="chartwrap"><canvas id="trend" role="img" aria-label="Grafik tren"></canvas></div>
-      <div class="readout" id="readout"></div>
+      <header>Tren suhu</header>
+      <canvas id="trend"></canvas>
+      <div class="legend"><b style="background:#1f4e79"></b>Objek &nbsp; <b style="background:#2e8b57"></b>Ambien</div>
     </section>
 
     <section class="panel">
-      <header><h2>Catatan kejadian</h2></header>
+      <header>Catatan kejadian</header>
       <div class="logwrap" id="logwrap"></div>
     </section>
-
-    <footer id="foot"></footer>
   </main>
 
   <script type="module">
@@ -200,59 +128,36 @@
 
     /* ================= KONFIGURASI ================= */
     const CFG = {
-      SITE: "Lokasi: Kalimantan",
-      PANEL_PATH: "panel/esp32_panel",
-      HISTORY_PATH: "history/esp32_panel",
+      LIVE_PATH: "suhu/esp32_suhu",
+      HISTORY_PATH: "riwayat_suhu/esp32_suhu",
       HISTORY_POINTS: 120,
-      OFFLINE_AFTER_MS: 60000,      // ESP32 dianggap mati jika tidak kirim data selama ini
-      TARIF_PER_KWH: 1444.70        // Rp per kWh, sesuaikan dengan tarif PLN Anda
+      OFFLINE_AFTER_MS: 20000,           // firmware kirim tiap 2 detik
+      LIM: {
+        obj:  { name:"Suhu objek",  warn:38, alarm:45, min:0, max:100 },
+        amb:  { name:"Suhu ambien", warn:35, alarm:40, min:0, max:60 }
+      }
     };
-
-    /* Batas alarm. loA/hiA = alarm, loW/hiW = peringatan */
-    const LIM = {
-      V: { name:"Tegangan", unit:"V", dec:1, min:0, max:300,  loA:198, loW:207, hiW:233, hiA:242 },
-      I: { name:"Arus",     unit:"A", dec:2, min:0, max:20,   hiW:12,  hiA:16 },
-      P: { name:"Daya",     unit:"W", dec:0, min:0, max:4000, hiW:2400, hiA:3000 }
-    };
-
-    /* Grafik yang bisa dipilih */
-    const GROUPS = {
-      V: { title:"Tegangan", key:"V", unit:"V",   dec:1, lim:LIM.V },
-      I: { title:"Arus",     key:"I", unit:"A",   dec:2, lim:LIM.I },
-      P: { title:"Daya",     key:"P", unit:"W",   dec:0, lim:LIM.P },
-      E: { title:"Energi",   key:"E", unit:"kWh", dec:3, lim:null }
-    };
-    let trendG = "V";
     /* ============================================== */
 
     const $ = id => document.getElementById(id);
     const pad = n => String(n).padStart(2, "0");
     const hms = d => pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
-    const dmy = d => d.toLocaleDateString("id-ID", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
-    const fmt = (v, d) => (v == null || isNaN(v)) ? "--" : Number(v).toFixed(d);
-    const rupiah = v => "Rp " + Math.round(v).toLocaleString("id-ID");
-    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-    const RANK = { na:-1, ok:0, warn:1, alarm:2 };
-    const STATE_TXT = { ok:"Normal", warn:"Peringatan", alarm:"Alarm", na:"Tidak ada data" };
+    const fmt = (v, d = 1) => (v == null || isNaN(v)) ? "--" : Number(v).toFixed(d);
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-    let live = null, hist = [], hoverI = null;
-    let dbOk = true, prevComm = null, log = [];
+    let live = null, hist = [], log = [], prevComm = null;
+    let dbOk = true;
     const prevSt = {};
 
-    function stateOf(l, v) {
+    function stateOf(lim, v) {
       if (v == null) return "na";
-      if ((l.loA != null && v < l.loA) || (l.hiA != null && v > l.hiA)) return "alarm";
-      if ((l.loW != null && v < l.loW) || (l.hiW != null && v > l.hiW)) return "warn";
+      if (v >= lim.alarm) return "alarm";
+      if (v >= lim.warn)  return "warn";
       return "ok";
     }
 
-    function rangeText(l) {
-      if (l.loA != null && l.hiA != null) return `Batas normal: ${l.loA} – ${l.hiA} ${l.unit}`;
-      if (l.hiA != null) return `Batas alarm: ${l.hiA} ${l.unit}`;
-      return "";
-    }
+    const STATE_TXT = { ok:"Normal", warn:"Peringatan", alarm:"Alarm", na:"Tidak ada data" };
 
-    /* ---------- Log kejadian ---------- */
     function addLog(level, msg) {
       log.unshift({ t: new Date(), level, msg });
       if (log.length > 60) log.pop();
@@ -260,139 +165,95 @@
     }
 
     function renderLog() {
-      const el = $("logwrap");
-      if (!log.length) {
-        el.innerHTML = '<p class="empty">Belum ada kejadian. Perubahan status alarm dan koneksi akan tercatat di sini.</p>';
-        return;
-      }
-      const names = { alarm:"Alarm", warn:"Peringatan", ok:"Normal", info:"Info" };
-      el.innerHTML = '<table><thead><tr><th>Waktu</th><th>Level</th><th>Kejadian</th></tr></thead><tbody>' +
-        log.map(r => `<tr><td class="t">${hms(r.t)}</td><td><span class="lv ${r.level}">${names[r.level]}</span></td><td>${r.msg}</td></tr>`).join("") +
+      const names = { alarm:"Alarm", warn:"Peringatan", ok:"Normal" };
+      if (!log.length) { $("logwrap").innerHTML = '<p class="empty">Belum ada kejadian.</p>'; return; }
+      $("logwrap").innerHTML = "<table><thead><tr><th>Waktu</th><th>Level</th><th>Kejadian</th></tr></thead><tbody>" +
+        log.map(r => `<tr><td>${hms(r.t)}</td><td><span class="lv ${r.level}">${names[r.level]}</span></td><td>${r.msg}</td></tr>`).join("") +
         "</tbody></table>";
     }
 
-    function track(key, label, st, text) {
-      if (st === "na") return;
-      const was = prevSt[key];
-      if (was !== undefined && was !== st) {
-        if (st === "alarm") addLog("alarm", `${label} ${text}: melewati batas alarm.`);
-        else if (st === "warn") addLog("warn", `${label} ${text}: mendekati batas.`);
-        else addLog("ok", `${label} ${text}: kembali normal.`);
-      }
-      prevSt[key] = st;
-    }
-
-    /* ---------- Kartu pengukuran ---------- */
-    function setMeter(k, v, st) {
-      const l = LIM[k];
-      const card = $("c-" + k);
-      card.className = "card " + st;
+    function setCard(k, v, st) {
+      const l = CFG.LIM[k];
+      $("c-" + k).className = "card " + st;
       $("s-" + k).textContent = STATE_TXT[st];
-      $("v-" + k).textContent = fmt(v, l.dec);
-      const frac = v == null ? 0 : clamp((v - l.min) / (l.max - l.min));
-      $("b-" + k).style.width = (frac * 100).toFixed(1) + "%";
-      $("r-" + k).textContent = rangeText(l);
+      $("v-" + k).textContent = fmt(v, 1);
+      $("b-" + k).style.width = ((v == null ? 0 : clamp((v - l.min) / (l.max - l.min), 0, 1)) * 100).toFixed(1) + "%";
+      $("w-" + k).textContent = l.warn;
+      $("a-" + k).textContent = l.alarm;
+      if (st !== "na") {
+        const was = prevSt[k];
+        if (was !== undefined && was !== st) {
+          const txt = `${l.name} ${fmt(v, 1)} °C`;
+          if (st === "alarm") addLog("alarm", `${txt}: melewati batas alarm.`);
+          else if (st === "warn") addLog("warn", `${txt}: mendekati batas.`);
+          else addLog("ok", `${txt}: kembali normal.`);
+        }
+        prevSt[k] = st;
+      }
     }
 
     function minMax(key) {
       const vals = hist.map(h => h[key]).filter(x => x != null);
-      if (!vals.length) return { min: null, max: null };
-      return { min: Math.min(...vals), max: Math.max(...vals) };
+      return vals.length ? { min: Math.min(...vals), max: Math.max(...vals) } : { min: null, max: null };
     }
 
-    function windowKwh() {
-      const e = hist.map(h => h.E).filter(x => x != null);
-      return e.length > 1 ? fmt(e[e.length - 1] - e[0], 3) + " kWh" : "--";
-    }
-
-    /* ---------- Render utama ---------- */
     function renderAll() {
       const now = Date.now();
-      const age = live?.ts ? Math.max(0, (now - live.ts) / 1000) : Infinity;
+      const age = live?.ts ? now - live.ts : Infinity;
 
       let comm;
       if (!dbOk) comm = "error";
       else if (!live) comm = "connecting";
-      else comm = age * 1000 < CFG.OFFLINE_AFTER_MS ? "online" : "stale";
+      else comm = age < CFG.OFFLINE_AFTER_MS ? "online" : "stale";
       const on = comm === "online";
 
-      const V = live?.V ?? null, I = live?.I ?? null, P = live?.P ?? null, E = live?.E ?? null;
+      const obj = on ? (live?.objek ?? null) : null;
+      const amb = on ? (live?.ambien ?? null) : null;
 
-      const stV = on ? stateOf(LIM.V, V) : "na";
-      const stI = on ? stateOf(LIM.I, I) : "na";
-      const stP = on ? stateOf(LIM.P, P) : "na";
+      const stO = on && live?.sensor_ok !== false ? stateOf(CFG.LIM.obj, obj) : "na";
+      const stA = on && live?.sensor_ok !== false ? stateOf(CFG.LIM.amb, amb) : "na";
 
-      setMeter("V", V, stV);
-      setMeter("I", I, stI);
-      setMeter("P", P, stP);
+      setCard("obj", obj, stO);
+      setCard("amb", amb, stA);
 
-      track("V", "Tegangan", stV, `${fmt(V, 1)} V`);
-      track("I", "Arus", stI, `${fmt(I, 2)} A`);
-      track("P", "Daya", stP, `${fmt(P, 0)} W`);
+      const mo = minMax("objek"), ma = minMax("ambien");
+      $("min-obj").textContent = fmt(mo.min, 1);  $("max-obj").textContent = fmt(mo.max, 1);
+      $("min-amb").textContent = fmt(ma.min, 1);  $("max-amb").textContent = fmt(ma.max, 1);
 
-      /* Min & maks dari riwayat */
-      const mV = minMax("V"), mI = minMax("I"), mP = minMax("P");
-      $("min-V").textContent = fmt(mV.min, 1);  $("max-V").textContent = fmt(mV.max, 1);
-      $("min-I").textContent = fmt(mI.min, 2);  $("max-I").textContent = fmt(mI.max, 2);
-      $("min-P").textContent = fmt(mP.min, 0);  $("max-P").textContent = fmt(mP.max, 0);
-
-      /* Kartu energi */
-      const stE = on && E != null ? "ok" : "na";
-      $("c-E").className = "card " + stE;
-      $("v-E").textContent = fmt(E, 3);
-      $("cost").textContent = E == null ? "--" : rupiah(E * CFG.TARIF_PER_KWH);
-      $("tarif").textContent = rupiah(CFG.TARIF_PER_KWH) + " / kWh";
-      $("win").textContent = windowKwh();
-      const pVals = hist.map(h => h.P).filter(x => x != null);
-      $("avgP").textContent = pVals.length ? fmt(pVals.reduce((a, b) => a + b, 0) / pVals.length, 0) + " W" : "--";
-      $("r-E").textContent = "Energi kumulatif sejak sensor dinyalakan";
-
-      /* Strip status */
-      let nA = 0, nW = 0;
-      const alarmTxt = [];
-      [["Tegangan", stV, `${fmt(V, 1)} V`], ["Arus", stI, `${fmt(I, 2)} A`], ["Daya", stP, `${fmt(P, 0)} W`]].forEach(([n, st, t]) => {
-        if (st === "alarm") { nA++; alarmTxt.push(`${n} ${t}`); }
-        else if (st === "warn") nW++;
-      });
+      $("curObj").textContent = obj == null ? "--" : fmt(obj, 1) + " °C";
+      $("curAmb").textContent = amb == null ? "--" : fmt(amb, 1) + " °C";
+      $("lastT").textContent = live?.ts ? hms(new Date(live.ts)) : "--:--:--";
 
       const label = { online:"Online", stale:"ESP32 tidak mengirim data", error:"Database tidak terjangkau", connecting:"Menghubungkan" };
       $("comm").textContent = label[comm];
       $("lamp").className = "lamp " + (comm === "connecting" ? "" : comm);
-      $("nAlarm").textContent = on ? nA : "--";
-      $("nWarn").textContent = on ? nW : "--";
-      $("curP").textContent = on && P != null ? fmt(P, 0) + " W" : "--";
-      $("lastT").textContent = live?.ts ? hms(new Date(live.ts)) : "--:--:--";
-      $("age").textContent = live?.ts
-        ? (age < 120 ? Math.round(age) + " detik lalu" : Math.round(age / 60) + " menit lalu")
-        : "";
 
-      /* Log perubahan koneksi */
+      if (live && live.sensor_ok === false) {
+        $("banner").textContent = "Sensor MLX90614 tidak terdeteksi di ESP32. Periksa wiring SDA, SCL, dan VCC 3.3V.";
+        $("banner").className = "banner show";
+      } else if (comm === "error") {
+        $("banner").textContent = "Database tidak terjangkau. Periksa koneksi internet dan firebase-config.js.";
+        $("banner").className = "banner show error";
+      } else if (comm === "stale") {
+        $("banner").textContent = "Data tidak diperbarui. Nilai yang tampil adalah pembacaan terakhir.";
+        $("banner").className = "banner show error";
+      } else if (stO === "alarm" || stA === "alarm") {
+        $("banner").textContent = "Alarm suhu aktif. Periksa kondisi di lokasi sensor.";
+        $("banner").className = "banner show";
+      } else {
+        $("banner").className = "banner";
+      }
+
       if (prevComm !== null && prevComm !== comm && comm !== "connecting") {
-        if (comm === "online") addLog("ok", "Komunikasi pulih. Data diterima kembali dari ESP32.");
-        else if (comm === "stale") addLog("warn", "ESP32 berhenti mengirim data. Periksa catu daya dan WiFi.");
+        if (comm === "online") addLog("ok", "Komunikasi pulih. Data diterima dari ESP32.");
+        else if (comm === "stale") addLog("warn", "ESP32 berhenti mengirim data.");
         else if (comm === "error") addLog("alarm", "Database Firebase tidak terjangkau.");
       }
       prevComm = comm;
 
-      /* Banner */
-      const b = $("banner");
-      if (comm === "error") {
-        b.textContent = "Database tidak terjangkau. Periksa koneksi internet dan firebase-config.js.";
-        b.className = "banner show error";
-      } else if (comm === "stale") {
-        b.textContent = "Data tidak diperbarui. Nilai yang tampil adalah pembacaan terakhir.";
-        b.className = "banner show error";
-      } else if (nA > 0) {
-        b.textContent = "Alarm aktif: " + alarmTxt.join("; ");
-        b.className = "banner show";
-      } else {
-        b.className = "banner";
-      }
-
       drawChart();
     }
 
-    /* ---------- Grafik tren ---------- */
     function drawChart() {
       const cv = $("trend"), ctx = cv.getContext("2d");
       const dpr = window.devicePixelRatio || 1;
@@ -400,116 +261,54 @@
       cv.width = w * dpr; cv.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      ctx.font = "12px 'Barlow Semi Condensed', sans-serif";
+      ctx.font = "12px Arial, sans-serif";
 
-      const g = GROUPS[trendG];
-      const pts = hist.filter(p => p.ts != null && p[g.key] != null);
+      const pts = hist.filter(p => p.ts != null && (p.objek != null || p.ambien != null));
       if (pts.length < 2) {
         ctx.fillStyle = "#59646e";
         ctx.fillText("Menunggu data. Grafik tampil setelah minimal dua data diterima.", 16, 30);
-        $("readout").textContent = "";
-        cv._g = null;
         return;
       }
 
-      const vals = pts.map(p => p[g.key]);
+      const vals = pts.flatMap(p => [p.objek, p.ambien]).filter(v => v != null);
       let lo = Math.min(...vals), hi = Math.max(...vals);
-      if (hi - lo < 1e-9) { const m = Math.abs(hi) * 0.05 || 1; lo -= m; hi += m; }
-      const padv = (hi - lo) * 0.12; lo -= padv; hi += padv;
-      if (g.lim && g.lim.min === 0 && lo < 0) lo = 0;
+      if (hi - lo < 1) { lo -= 1; hi += 1; }
+      const padv = (hi - lo) * 0.1; lo -= padv; hi += padv;
 
-      const L = 56, R = 14, T = 12, B = 28, cw = w - L - R, ch = h - T - B;
+      const L = 48, R = 14, T = 12, B = 26, cw = w - L - R, ch = h - T - B;
       const t0 = pts[0].ts, t1 = pts[pts.length - 1].ts;
       const X = t => L + (t - t0) / ((t1 - t0) || 1) * cw;
       const Y = v => T + (1 - (v - lo) / (hi - lo)) * ch;
 
-      /* grid + sumbu */
       ctx.strokeStyle = "#cfd3d7"; ctx.fillStyle = "#59646e"; ctx.lineWidth = 1; ctx.textAlign = "right";
       for (let i = 0; i <= 4; i++) {
         const v = lo + (hi - lo) * i / 4, y = Y(v);
         ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke();
-        ctx.fillText(v.toFixed(g.dec > 1 ? 2 : g.dec), L - 6, y + 4);
+        ctx.fillText(v.toFixed(0), L - 6, y + 4);
       }
       ctx.textAlign = "center";
       [0, 0.5, 1].forEach(f => ctx.fillText(hms(new Date(t0 + (t1 - t0) * f)), L + cw * f, h - 8));
-      ctx.strokeStyle = "#87909a"; ctx.strokeRect(L, T, cw, ch);
 
-      /* garis batas */
-      if (g.lim) {
-        [[g.lim.hiA,"#c0262d"],[g.lim.loA,"#c0262d"],[g.lim.hiW,"#d99a00"],[g.lim.loW,"#d99a00"]].forEach(([v, c]) => {
-          if (v == null || v < lo || v > hi) return;
-          ctx.strokeStyle = c; ctx.setLineDash([6, 4]);
-          ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(w - R, Y(v)); ctx.stroke();
-          ctx.setLineDash([]);
+      [["objek", "#1f4e79"], ["ambien", "#2e8b57"]].forEach(([key, color]) => {
+        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+        let started = false;
+        pts.forEach(p => {
+          if (p[key] == null) return;
+          const x = X(p.ts), y = Y(p[key]);
+          started ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          started = true;
         });
-      }
-
-      /* kurva */
-      ctx.strokeStyle = "#1f4e79"; ctx.lineWidth = 2; ctx.lineJoin = "round";
-      ctx.beginPath();
-      pts.forEach((p, i) => {
-        const x = X(p.ts), y = Y(p[g.key]);
-        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        ctx.stroke();
       });
-      ctx.stroke();
-
-      /* crosshair + titik */
-      const idx = hoverI != null ? Math.min(hoverI, pts.length - 1) : pts.length - 1;
-      const p = pts[idx], fx = X(p.ts), fy = Y(p[g.key]);
-      if (hoverI != null) {
-        ctx.strokeStyle = "#35404b"; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(fx, T); ctx.lineTo(fx, T + ch); ctx.stroke();
-      }
-      ctx.fillStyle = "#1b2229"; ctx.fillRect(fx - 4, fy - 4, 8, 8);
-
-      $("readout").textContent =
-        `${hms(new Date(p.ts))}   ${g.title} ${fmt(p[g.key], g.dec)} ${g.unit}` +
-        (hoverI == null ? "   (data terakhir)" : "");
-
-      cv._g = { L, cw, pts };
     }
-
-    /* Pilih grafik */
-    $("seg").innerHTML = Object.keys(GROUPS).map(k =>
-      `<button type="button" data-k="${k}" aria-pressed="${k === trendG}">${GROUPS[k].title}</button>`).join("");
-    $("seg").onclick = e => {
-      const b = e.target.closest("button"); if (!b) return;
-      trendG = b.dataset.k; hoverI = null;
-      document.querySelectorAll("#seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
-      drawChart();
-    };
-
-    /* Interaksi crosshair */
-    const trend = $("trend");
-    trend.addEventListener("pointermove", e => {
-      const g = trend._g; if (!g) return;
-      const r = trend.getBoundingClientRect();
-      const x = e.clientX - r.left;
-      const t0 = g.pts[0].ts, t1 = g.pts[g.pts.length - 1].ts;
-      const tt = t0 + clamp((x - g.L) / g.cw) * (t1 - t0);
-      let best = 0, bd = Infinity;
-      g.pts.forEach((p, i) => { const d = Math.abs(p.ts - tt); if (d < bd) { bd = d; best = i; } });
-      hoverI = best; drawChart();
-    });
-    trend.addEventListener("pointerleave", () => { hoverI = null; drawChart(); });
-    window.addEventListener("resize", drawChart);
 
     /* ---------- Firebase ---------- */
     const db = getDatabase(initializeApp(firebaseConfig));
 
-    onValue(ref(db, ".info/connected"), snap => {
-      dbOk = snap.val() === true;
-      renderAll();
-    });
+    onValue(ref(db, ".info/connected"), snap => { dbOk = snap.val() === true; renderAll(); });
 
-    onValue(ref(db, CFG.PANEL_PATH), snap => {
-      live = snap.val();
-      renderAll();
-    }, err => {
-      dbOk = false;
-      addLog("alarm", "Gagal membaca data: " + err.message);
-      renderAll();
-    });
+    onValue(ref(db, CFG.LIVE_PATH), snap => { live = snap.val(); renderAll(); },
+      err => { dbOk = false; addLog("alarm", "Gagal membaca data: " + err.message); renderAll(); });
 
     onValue(query(ref(db, CFG.HISTORY_PATH), limitToLast(CFG.HISTORY_POINTS)), snap => {
       const obj = snap.val() || {};
@@ -518,14 +317,7 @@
     });
 
     /* ---------- Mulai ---------- */
-    function tickClock() {
-      const n = new Date();
-      $("clock").textContent = hms(n);
-      $("date").textContent = dmy(n);
-    }
-
-    $("site").textContent = CFG.SITE + ", 1 fasa via ESP32 + 1x PZEM-004T";
-    $("foot").textContent = `Sumber data: Firebase Realtime Database (${CFG.PANEL_PATH}). Tampilan diperbarui otomatis.`;
+    function tickClock() { $("clock").textContent = hms(new Date()); }
     renderLog();
     tickClock();
     setInterval(tickClock, 1000);
